@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Untitled - Notepad</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --chrome: #f3f3f3;
+    --border: #d4d4d4;
+    --hover: #e5e5e5;
+    --accent: #0067c0;
+    --muted: #5a5a5a;
+  }
+  html[data-theme="dark"] {
+    --bg: #1f1f1f;
+    --fg: #e8e8e8;
+    --chrome: #2b2b2b;
+    --border: #3d3d3d;
+    --hover: #3a3a3a;
+    --accent: #4cc2ff;
+    --muted: #9a9a9a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  body { display: flex; flex-direction: column; }
+
+  /* ---- menu bar ---- */
+  #menubar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 4px;
+    background: var(--chrome);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+    user-select: none;
+  }
+  .menu { position: relative; }
+  .menu > button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 5px 11px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .menu > button:hover, .menu.open > button { background: var(--hover); }
+  .dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 230px;
+    margin-top: 3px;
+    padding: 4px;
+    background: var(--chrome);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.22);
+    z-index: 20;
+    display: none;
+  }
+  .menu.open .dropdown { display: block; }
+  .dropdown button {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 7px 10px;
+    border-radius: 4px;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dropdown button:hover { background: var(--hover); }
+  .dropdown button kbd {
+    font: inherit;
+    color: var(--muted);
+  }
+  .dropdown hr {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 4px 2px;
+  }
+  .check { width: 1em; display: inline-block; }
+
+  /* ---- editor ---- */
+  #editor {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    padding: 8px 10px;
+    border: 0;
+    outline: none;
+    resize: none;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: Consolas, "Cascadia Mono", "Roboto Mono", ui-monospace, monospace;
+    font-size: 15px;
+    line-height: 1.45;
+    tab-size: 4;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+  }
+  #editor.nowrap { white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+
+  /* ---- find bar ---- */
+  #findbar {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--chrome);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+  }
+  #findbar.show { display: flex; }
+  #findbar input {
+    font: inherit;
+    padding: 4px 7px;
+    min-width: 0;
+    flex: 1 1 160px;
+    max-width: 240px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  #findbar input:focus { outline: 1px solid var(--accent); }
+  #findbar button {
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  #findbar button:hover { background: var(--hover); }
+  #findcount { color: var(--muted); flex: none; min-width: 68px; }
+
+  /* ---- status bar ---- */
+  #statusbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 22px;
+    padding: 4px 12px;
+    background: var(--chrome);
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    flex: none;
+    user-select: none;
+  }
+  #statusbar span:first-child { margin-right: auto; }
+  #statusbar.hidden { display: none; }
+
+  @media (max-width: 560px) {
+    .dropdown button kbd { display: none; }
+    #statusbar { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="menubar">
+  <div class="menu" data-menu>
+    <button type="button">File</button>
+    <div class="dropdown">
+      <button data-act="new">New<kbd>Ctrl+N</kbd></button>
+      <button data-act="open">Open…<kbd>Ctrl+O</kbd></button>
+      <button data-act="save">Save<kbd>Ctrl+S</kbd></button>
+      <button data-act="saveas">Save As…<kbd>Ctrl+Shift+S</kbd></button>
+    </div>
+  </div>
+  <div class="menu" data-menu>
+    <button type="button">Edit</button>
+    <div class="dropdown">
+      <button data-act="undo">Undo<kbd>Ctrl+Z</kbd></button>
+      <button data-act="redo">Redo<kbd>Ctrl+Y</kbd></button>
+      <hr>
+      <button data-act="find">Find / Replace<kbd>Ctrl+F</kbd></button>
+      <button data-act="selectall">Select All<kbd>Ctrl+A</kbd></button>
+      <hr>
+      <button data-act="timestamp">Time/Date<kbd>F5</kbd></button>
+    </div>
+  </div>
+  <div class="menu" data-menu>
+    <button type="button">View</button>
+    <div class="dropdown">
+      <button data-act="wrap"><span><span class="check" data-check="wrap"></span> Word Wrap</span></button>
+      <button data-act="theme"><span><span class="check" data-check="theme"></span> Dark Mode</span></button>
+      <button data-act="statusbar"><span><span class="check" data-check="statusbar"></span> Status Bar</span></button>
+      <hr>
+      <button data-act="zoomin">Zoom In<kbd>Ctrl++</kbd></button>
+      <button data-act="zoomout">Zoom Out<kbd>Ctrl+-</kbd></button>
+      <button data-act="zoomreset">Reset Zoom<kbd>Ctrl+0</kbd></button>
+    </div>
+  </div>
+</div>
+
+<div id="findbar">
+  <input id="findinput" type="text" placeholder="Find" aria-label="Find">
+  <button type="button" data-act="findprev" title="Previous (Shift+Enter)">▲</button>
+  <button type="button" data-act="findnext" title="Next (Enter)">▼</button>
+  <span id="findcount"></span>
+  <input id="replaceinput" type="text" placeholder="Replace with" aria-label="Replace with">
+  <button type="button" data-act="replace">Replace</button>
+  <button type="button" data-act="replaceall">All</button>
+  <button type="button" data-act="closefind" title="Close (Esc)">✕</button>
+</div>
+
+<textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+          aria-label="Text editor"></textarea>
+
+<div id="statusbar">
+  <span id="saved"></span>
+  <span id="pos">Ln 1, Col 1</span>
+  <span id="counts">0 words, 0 chars</span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ed = document.getElementById("editor");
+  var findbar = document.getElementById("findbar");
+  var findInput = document.getElementById("findinput");
+  var replaceInput = document.getElementById("replaceinput");
+  var findCount = document.getElementById("findcount");
+  var statusbar = document.getElementById("statusbar");
+  var savedEl = document.getElementById("saved");
+
+  var STORE = "notepad.state.v1";
+  var fileHandle = null;          // File System Access API handle, when available
+  var fileName = "Untitled.txt";
+  var dirty = false;
+  var savedTimer = null;
+
+  var prefs = {
+    wrap: true,
+    dark: matchMedia("(prefers-color-scheme: dark)").matches,
+    statusbar: true,
+    fontSize: 15
+  };
+
+  /* ---------------- persistence ---------------- */
+
+  function load() {
+    var raw;
+    try { raw = localStorage.getItem(STORE); } catch (e) { return; }
+    if (!raw) return;
+    var s;
+    try { s = JSON.parse(raw); } catch (e) { return; }
+    ed.value = s.text || "";
+    fileName = s.fileName || "Untitled.txt";
+    if (s.prefs) {
+      for (var k in prefs) if (k in s.prefs) prefs[k] = s.prefs[k];
+    }
+    if (typeof s.sel === "number") {
+      ed.selectionStart = ed.selectionEnd = Math.min(s.sel, ed.value.length);
+    }
+  }
+
+  var saveTimer = null;
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        localStorage.setItem(STORE, JSON.stringify({
+          text: ed.value,
+          fileName: fileName,
+          prefs: prefs,
+          sel: ed.selectionStart
+        }));
+      } catch (e) { /* quota exceeded — editing still works */ }
+    }, 400);
+  }
+
+  /* ---------------- chrome / prefs ---------------- */
+
+  function applyPrefs() {
+    ed.classList.toggle("nowrap", !prefs.wrap);
+    document.documentElement.dataset.theme = prefs.dark ? "dark" : "light";
+    statusbar.classList.toggle("hidden", !prefs.statusbar);
+    ed.style.fontSize = prefs.fontSize + "px";
+    setCheck("wrap", prefs.wrap);
+    setCheck("theme", prefs.dark);
+    setCheck("statusbar", prefs.statusbar);
+    persist();
+  }
+
+  function setCheck(name, on) {
+    var el = document.querySelector('[data-check="' + name + '"]');
+    if (el) el.textContent = on ? "✓" : "";
+  }
+
+  function setTitle() {
+    document.title = (dirty ? "*" : "") + fileName + " - Notepad";
+  }
+
+  function markDirty() {
+    if (!dirty) { dirty = true; setTitle(); }
+  }
+
+  function flash(msg) {
+    savedEl.textContent = msg;
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(function () { savedEl.textContent = ""; }, 2500);
+  }
+
+  /* ---------------- status bar ---------------- */
+
+  function updateStatus() {
+    var upto = ed.value.slice(0, ed.selectionStart);
+    var line = upto.split("\n").length;
+    var col = upto.length - upto.lastIndexOf("\n");
+    document.getElementById("pos").textContent = "Ln " + line + ", Col " + col;
+
+    var text = ed.value;
+    var words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    document.getElementById("counts").textContent =
+      words.toLocaleString() + (words === 1 ? " word, " : " words, ") +
+      text.length.toLocaleString() + " chars";
+  }
+
+  /* ---------------- file actions ---------------- */
+
+  function confirmDiscard() {
+    return !dirty || confirm("You have unsaved changes. Discard them?");
+  }
+
+  function newFile() {
+    if (!confirmDiscard()) return;
+    ed.value = "";
+    fileHandle = null;
+    fileName = "Untitled.txt";
+    dirty = false;
+    setTitle();
+    updateStatus();
+    persist();
+    ed.focus();
+  }
+
+  // The File System Access API exists in Chrome but is rejected on file:// (opaque
+  // origin), so feature detection alone isn't enough — every call falls back on error.
+  var hasFSA = typeof window.showOpenFilePicker === "function";
+
+  function cancelled(err) {
+    return err && (err.name === "AbortError" || err.name === "NotAllowedError");
+  }
+
+  function openFile() {
+    if (!confirmDiscard()) return;
+    if (hasFSA) {
+      window.showOpenFilePicker({
+        types: [{ description: "Text files", accept: { "text/plain": [".txt", ".md", ".log", ".csv", ".json", ".js", ".css", ".html"] } }]
+      }).then(function (handles) {
+        fileHandle = handles[0];
+        return fileHandle.getFile();
+      }).then(function (file) {
+        fileName = file.name;
+        return file.text();
+      }).then(function (text) {
+        ed.value = text;
+        dirty = false;
+        setTitle();
+        updateStatus();
+        persist();
+        ed.focus();
+      }).catch(function (err) {
+        if (cancelled(err)) return;
+        hasFSA = false;
+        pickFileFallback();
+      });
+      return;
+    }
+    pickFileFallback();
+  }
+
+  function pickFileFallback() {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = ".txt,.md,.log,.csv,.json,.js,.css,.html,text/*";
+    inp.addEventListener("change", function () {
+      var file = inp.files && inp.files[0];
+      if (!file) return;
+      file.text().then(function (text) {
+        ed.value = text;
+        fileName = file.name;
+        fileHandle = null;
+        dirty = false;
+        setTitle();
+        updateStatus();
+        persist();
+        ed.focus();
+      });
+    });
+    inp.click();
+  }
+
+  function download() {
+    var blob = new Blob([ed.value], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    dirty = false;
+    setTitle();
+    flash("Downloaded");
+  }
+
+  function writeHandle() {
+    return fileHandle.createWritable().then(function (w) {
+      return w.write(ed.value).then(function () { return w.close(); });
+    }).then(function () {
+      dirty = false;
+      setTitle();
+      flash("Saved");
+    });
+  }
+
+  function saveFile() {
+    if (fileHandle) {
+      writeHandle().catch(function (err) {
+        if (cancelled(err)) return;
+        fileHandle = null;
+        download();
+      });
+      return;
+    }
+    saveAs();
+  }
+
+  function saveAs() {
+    if (!hasFSA) { download(); return; }
+    window.showSaveFilePicker({
+      suggestedName: fileName,
+      types: [{ description: "Text file", accept: { "text/plain": [".txt"] } }]
+    }).then(function (handle) {
+      fileHandle = handle;
+      fileName = handle.name;
+      return writeHandle();
+    }).catch(function (err) {
+      if (cancelled(err)) return;
+      // Blocked (e.g. file:// origin) — download instead so Save always does something.
+      hasFSA = false;
+      download();
+    });
+  }
+
+  /* ---------------- find & replace ---------------- */
+
+  function openFind() {
+    findbar.classList.add("show");
+    var sel = ed.value.slice(ed.selectionStart, ed.selectionEnd);
+    if (sel && sel.length < 200 && sel.indexOf("\n") === -1) findInput.value = sel;
+    findInput.focus();
+    findInput.select();
+    updateFindCount();
+  }
+
+  function closeFind() {
+    findbar.classList.remove("show");
+    ed.focus();
+  }
+
+  function updateFindCount() {
+    var needle = findInput.value;
+    if (!needle) { findCount.textContent = ""; return; }
+    var hay = ed.value.toLowerCase();
+    var n = needle.toLowerCase();
+    var count = 0, i = 0;
+    while ((i = hay.indexOf(n, i)) !== -1) { count++; i += n.length; }
+    findCount.textContent = count ? count + " found" : "No results";
+  }
+
+  function findNext(backwards) {
+    var needle = findInput.value;
+    if (!needle) return;
+    var hay = ed.value.toLowerCase();
+    var n = needle.toLowerCase();
+    var idx;
+
+    if (backwards) {
+      idx = hay.lastIndexOf(n, Math.max(0, ed.selectionStart - 1));
+      if (idx === -1) idx = hay.lastIndexOf(n);
+    } else {
+      idx = hay.indexOf(n, ed.selectionEnd);
+      if (idx === -1) idx = hay.indexOf(n);
+    }
+    if (idx === -1) { updateFindCount(); return; }
+
+    ed.focus();
+    ed.setSelectionRange(idx, idx + needle.length);
+    scrollSelectionIntoView();
+    updateStatus();
+  }
+
+  function scrollSelectionIntoView() {
+    // Approximate: scroll so the caret line sits near the middle.
+    var before = ed.value.slice(0, ed.selectionStart).split("\n").length - 1;
+    var lineHeight = parseFloat(getComputedStyle(ed).lineHeight) || 20;
+    var target = before * lineHeight - ed.clientHeight / 2;
+    ed.scrollTop = Math.max(0, target);
+  }
+
+  function replaceOne() {
+    var needle = findInput.value;
+    if (!needle) return;
+    var sel = ed.value.slice(ed.selectionStart, ed.selectionEnd);
+    if (sel.toLowerCase() === needle.toLowerCase()) {
+      insertText(replaceInput.value);
+      markDirty();
+      persist();
+    }
+    findNext(false);
+    updateFindCount();
+  }
+
+  function replaceAll() {
+    var needle = findInput.value;
+    if (!needle) return;
+    var hay = ed.value;
+    var n = needle.toLowerCase();
+    var lower = hay.toLowerCase();
+    var out = "", i = 0, prev = 0, count = 0;
+    while ((i = lower.indexOf(n, prev)) !== -1) {
+      out += hay.slice(prev, i) + replaceInput.value;
+      prev = i + needle.length;
+      count++;
+    }
+    if (!count) { findCount.textContent = "No results"; return; }
+    out += hay.slice(prev);
+    var pos = ed.selectionStart;
+    ed.value = out;
+    ed.setSelectionRange(Math.min(pos, out.length), Math.min(pos, out.length));
+    markDirty();
+    persist();
+    updateStatus();
+    findCount.textContent = count + " replaced";
+  }
+
+  /* ---------------- editing helpers ---------------- */
+
+  function insertText(str) {
+    // execCommand keeps the native undo stack intact where supported.
+    ed.focus();
+    var ok = false;
+    try { ok = document.execCommand("insertText", false, str); } catch (e) { ok = false; }
+    if (!ok) {
+      var s = ed.selectionStart, e2 = ed.selectionEnd;
+      ed.value = ed.value.slice(0, s) + str + ed.value.slice(e2);
+      ed.setSelectionRange(s + str.length, s + str.length);
+    }
+    updateStatus();
+  }
+
+  function setZoom(delta) {
+    prefs.fontSize = Math.min(48, Math.max(9, prefs.fontSize + delta));
+    applyPrefs();
+  }
+
+  /* ---------------- menus ---------------- */
+
+  var menus = Array.prototype.slice.call(document.querySelectorAll("[data-menu]"));
+
+  function closeMenus() {
+    menus.forEach(function (m) { m.classList.remove("open"); });
+  }
+
+  menus.forEach(function (m) {
+    var btn = m.querySelector("button");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var wasOpen = m.classList.contains("open");
+      closeMenus();
+      if (!wasOpen) m.classList.add("open");
+    });
+    m.addEventListener("mouseenter", function () {
+      // Hover-to-switch once a menu is already open, like a real menu bar.
+      if (menus.some(function (x) { return x.classList.contains("open"); })) {
+        closeMenus();
+        m.classList.add("open");
+      }
+    });
+  });
+
+  document.addEventListener("click", closeMenus);
+
+  var actions = {
+    "new": newFile,
+    open: openFile,
+    save: saveFile,
+    saveas: saveAs,
+    undo: function () { ed.focus(); document.execCommand("undo"); updateStatus(); },
+    redo: function () { ed.focus(); document.execCommand("redo"); updateStatus(); },
+    find: openFind,
+    selectall: function () { ed.focus(); ed.select(); },
+    timestamp: function () { insertText(new Date().toLocaleString()); markDirty(); persist(); },
+    wrap: function () { prefs.wrap = !prefs.wrap; applyPrefs(); },
+    theme: function () { prefs.dark = !prefs.dark; applyPrefs(); },
+    statusbar: function () { prefs.statusbar = !prefs.statusbar; applyPrefs(); },
+    zoomin: function () { setZoom(1); },
+    zoomout: function () { setZoom(-1); },
+    zoomreset: function () { prefs.fontSize = 15; applyPrefs(); },
+    findnext: function () { findNext(false); },
+    findprev: function () { findNext(true); },
+    replace: replaceOne,
+    replaceall: replaceAll,
+    closefind: closeFind
+  };
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    var fn = actions[btn.dataset.act];
+    if (fn) { closeMenus(); fn(); }
+  });
+
+  /* ---------------- keyboard ---------------- */
+
+  document.addEventListener("keydown", function (e) {
+    var mod = e.ctrlKey || e.metaKey;
+
+    if (e.key === "Escape") {
+      closeMenus();
+      if (findbar.classList.contains("show")) closeFind();
+      return;
+    }
+    if (e.key === "F5") { e.preventDefault(); actions.timestamp(); return; }
+
+    if (!mod) return;
+
+    switch (e.key.toLowerCase()) {
+      case "s": e.preventDefault(); e.shiftKey ? saveAs() : saveFile(); break;
+      case "o": e.preventDefault(); openFile(); break;
+      case "n": e.preventDefault(); newFile(); break;
+      case "f": e.preventDefault(); openFind(); break;
+      case "h": e.preventDefault(); openFind(); replaceInput.focus(); break;
+      case "g": e.preventDefault(); findNext(e.shiftKey); break;
+      case "=": case "+": e.preventDefault(); setZoom(1); break;
+      case "-": e.preventDefault(); setZoom(-1); break;
+      case "0": e.preventDefault(); prefs.fontSize = 15; applyPrefs(); break;
+    }
+  });
+
+  // Tab inserts a tab character instead of moving focus.
+  ed.addEventListener("keydown", function (e) {
+    if (e.key !== "Tab" || e.ctrlKey || e.metaKey || e.altKey) return;
+    e.preventDefault();
+    insertText("\t");
+    markDirty();
+    persist();
+  });
+
+  findInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); findNext(e.shiftKey); }
+  });
+  findInput.addEventListener("input", updateFindCount);
+  replaceInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); replaceOne(); }
+  });
+
+  /* ---------------- editor events ---------------- */
+
+  ed.addEventListener("input", function () {
+    markDirty();
+    updateStatus();
+    persist();
+    if (findbar.classList.contains("show")) updateFindCount();
+  });
+
+  ["click", "keyup", "select", "focus"].forEach(function (evt) {
+    ed.addEventListener(evt, updateStatus);
+  });
+
+  // Drag a file onto the window to open it.
+  ["dragover", "drop"].forEach(function (evt) {
+    document.addEventListener(evt, function (e) { e.preventDefault(); });
+  });
+  document.addEventListener("drop", function (e) {
+    var file = e.dataTransfer && e.dataTransfer.files[0];
+    if (!file || !confirmDiscard()) return;
+    file.text().then(function (text) {
+      ed.value = text;
+      fileName = file.name;
+      fileHandle = null;
+      dirty = false;
+      setTitle();
+      updateStatus();
+      persist();
+    });
+  });
+
+  window.addEventListener("beforeunload", function (e) {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
+
+  /* ---------------- boot ---------------- */
+
+  load();
+  applyPrefs();
+  setTitle();
+  updateStatus();
+  ed.focus();
+
+  // Offline support when served over http(s); silently skipped on file://.
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
