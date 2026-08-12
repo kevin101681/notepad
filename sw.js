@@ -1,5 +1,5 @@
 /* Offline shell for Notepad. Bump CACHE when index.html changes. */
-const CACHE = "notepad-v2";
+const CACHE = "notepad-v3";
 const ASSETS = [
   "./", "./index.html", "./manifest.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"

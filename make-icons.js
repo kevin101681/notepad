@@ -8,13 +8,20 @@
 const fs = require("fs");
 const zlib = require("zlib");
 
-const BG = [0, 103, 192];
-const FG = [255, 255, 255];
+// Style shared with Kevin's other apps (PDF Ink / claude dashboard):
+// dark tile, slate-blue circle, warm-white page with slate text lines.
+const BG = [38, 38, 36];        // #262624 dark tile
+const CIRCLE = [95, 141, 161];  // #5f8da1 slate blue
+const FG = [250, 249, 245];     // #faf9f5 warm white page
 
-// Page glyph size as a fraction of the icon. Chosen so the page's corners sit
-// inside the maskable safe zone: hypot(0.46/2, 0.56/2) = 0.362 < 0.40.
-const PAGE_W = 0.46;
-const PAGE_H = 0.56;
+// Circle and page sizes as fractions of the icon. The page's corners must sit
+// inside the circle, and (for maskable) the circle inside the safe zone
+// (a centred circle of radius 40%): any → circle r 0.363, page hypot 0.320;
+// maskable → circle r 0.29, page hypot 0.256.
+const SIZES = {
+  any: { circleR: 0.363, pageW: 0.40, pageH: 0.50 },
+  maskable: { circleR: 0.29, pageW: 0.32, pageH: 0.40 }
+};
 
 function crc32(buf) {
   let c, crc = 0xffffffff;
@@ -38,8 +45,10 @@ function chunk(type, data) {
 function png(size, maskable) {
   const s = size;
   const radius = maskable ? 0 : s * 0.22;
+  const { circleR, pageW: pw, pageH: ph } = SIZES[maskable ? "maskable" : "any"];
 
-  const pageW = s * PAGE_W, pageH = s * PAGE_H;
+  const circR = s * circleR;
+  const pageW = s * pw, pageH = s * ph;
   const px0 = (s - pageW) / 2, px1 = px0 + pageW;
   const py0 = (s - pageH) / 2, py1 = py0 + pageH;
 
@@ -67,11 +76,15 @@ function png(size, maskable) {
       let r = BG[0], g = BG[1], b = BG[2];
       const a = inside ? 255 : 0;
 
+      if (Math.hypot(x + 0.5 - s / 2, y + 0.5 - s / 2) <= circR) {
+        r = CIRCLE[0]; g = CIRCLE[1]; b = CIRCLE[2];
+      }
+
       if (x >= px0 && x < px1 && y >= py0 && y < py1) {
         r = FG[0]; g = FG[1]; b = FG[2];
         for (const ln of lines) {
           if (y >= ln.y && y < ln.y + lineH && x >= ln.x0 && x < ln.x1) {
-            r = BG[0]; g = BG[1]; b = BG[2];
+            r = CIRCLE[0]; g = CIRCLE[1]; b = CIRCLE[2];
           }
         }
       }
