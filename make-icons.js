@@ -9,18 +9,19 @@ const fs = require("fs");
 const zlib = require("zlib");
 
 // Style shared with Kevin's other apps (PDF Ink / claude dashboard):
-// dark tile, slate-blue circle, warm-white page with slate text lines.
-const BG = [38, 38, 36];        // #262624 dark tile
+// slate-blue circle, warm-white page with slate text lines. No dark tile —
+// circular launcher crops (ChromeOS) would show it as a black ring.
+// "any" is a full-bleed slate circle on transparency; "maskable" is a
+// full-bleed slate square (the platform crops it to its own shape).
 const CIRCLE = [95, 141, 161];  // #5f8da1 slate blue
 const FG = [250, 249, 245];     // #faf9f5 warm white page
 
-// Circle and page sizes as fractions of the icon. The page's corners must sit
-// inside the circle, and (for maskable) the circle inside the safe zone
-// (a centred circle of radius 40%): any → circle r 0.363, page hypot 0.320;
-// maskable → circle r 0.29, page hypot 0.256.
+// Page sizes as fractions of the icon. The page's corners must sit inside
+// the "any" circle (r 0.49: hypot 0.320 ✓) and, for maskable, inside the
+// safe zone (a centred circle of radius 40%: hypot 0.256 ✓).
 const SIZES = {
-  any: { circleR: 0.363, pageW: 0.40, pageH: 0.50 },
-  maskable: { circleR: 0.29, pageW: 0.32, pageH: 0.40 }
+  any: { circleR: 0.49, pageW: 0.40, pageH: 0.50 },
+  maskable: { circleR: null, pageW: 0.32, pageH: 0.40 }
 };
 
 function crc32(buf) {
@@ -44,10 +45,9 @@ function chunk(type, data) {
 
 function png(size, maskable) {
   const s = size;
-  const radius = maskable ? 0 : s * 0.22;
   const { circleR, pageW: pw, pageH: ph } = SIZES[maskable ? "maskable" : "any"];
 
-  const circR = s * circleR;
+  const circR = circleR ? s * circleR : null;
   const pageW = s * pw, pageH = s * ph;
   const px0 = (s - pageW) / 2, px1 = px0 + pageW;
   const py0 = (s - pageH) / 2, py1 = py0 + pageH;
@@ -66,19 +66,13 @@ function png(size, maskable) {
     const row = Buffer.alloc(1 + s * 4); // filter byte + RGBA
     row[0] = 0;
     for (let x = 0; x < s; x++) {
-      let inside = true;
-      if (radius > 0) {
-        const cx = Math.min(Math.max(x + 0.5, radius), s - radius);
-        const cy = Math.min(Math.max(y + 0.5, radius), s - radius);
-        inside = Math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= radius;
-      }
+      // maskable: full-bleed slate; any: slate circle, transparent outside
+      const inside =
+        circR === null ||
+        Math.hypot(x + 0.5 - s / 2, y + 0.5 - s / 2) <= circR;
 
-      let r = BG[0], g = BG[1], b = BG[2];
+      let r = CIRCLE[0], g = CIRCLE[1], b = CIRCLE[2];
       const a = inside ? 255 : 0;
-
-      if (Math.hypot(x + 0.5 - s / 2, y + 0.5 - s / 2) <= circR) {
-        r = CIRCLE[0]; g = CIRCLE[1]; b = CIRCLE[2];
-      }
 
       if (x >= px0 && x < px1 && y >= py0 && y < py1) {
         r = FG[0]; g = FG[1]; b = FG[2];
