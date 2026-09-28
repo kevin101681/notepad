@@ -173,10 +173,128 @@
   }
   #statusbar span:first-child { margin-right: auto; }
   #statusbar.hidden { display: none; }
+  #sync.error { color: #c42b1c; }
+  html[data-theme="dark"] #sync.error { color: #ff99a4; }
+
+  /* ---- notes sidebar ---- */
+  #main { flex: 1; display: flex; min-height: 0; position: relative; }
+  #sidebar {
+    width: 250px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    background: var(--chrome);
+    border-right: 1px solid var(--border);
+    user-select: none;
+  }
+  #sidebar.hidden { display: none; }
+  #sidehead {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 5px 5px 5px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  #sidehead span { flex: 1; }
+  .iconbtn {
+    font: inherit;
+    color: var(--muted);
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    cursor: pointer;
+    line-height: 1;
+    flex: none;
+  }
+  .iconbtn:hover { background: var(--hover); color: var(--fg); }
+  #tree { flex: 1; overflow: auto; padding: 4px; }
+  #tree ul { list-style: none; margin: 0; padding: 0; }
+  #tree ul ul { padding-left: 14px; }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 2px 2px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .row:hover { background: var(--hover); }
+  .row.active { background: var(--hover); color: var(--accent); }
+  .row .tw { width: 1em; flex: none; text-align: center; color: var(--muted); font-size: 14px; }
+  .row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; padding: 3px 0; }
+  .row .iconbtn { width: 22px; height: 22px; visibility: hidden; }
+  .row:hover .iconbtn, .row.active .iconbtn { visibility: visible; }
+  @media (hover: none) { .row .iconbtn { visibility: visible; } }
+  .treemsg { padding: 10px 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .treemsg button {
+    font: inherit;
+    color: var(--accent);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* ---- sync settings dialog ---- */
+  dialog {
+    background: var(--chrome);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    width: min(440px, calc(100vw - 32px));
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h2 { font-size: 16px; margin: 0 0 6px; }
+  dialog p { margin: 6px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  dialog a { color: var(--accent); }
+  dialog label { display: block; margin: 12px 0 4px; font-size: 13px; }
+  dialog input {
+    width: 100%;
+    font: inherit;
+    padding: 6px 8px;
+    background: var(--bg);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  dialog input:focus { outline: 1px solid var(--accent); }
+  #syncerr { color: #c42b1c; min-height: 1.2em; }
+  html[data-theme="dark"] #syncerr { color: #ff99a4; }
+  dialog .btns { display: flex; gap: 8px; margin-top: 14px; }
+  dialog .btns button {
+    font: inherit;
+    color: inherit;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  dialog .btns button:hover { background: var(--hover); }
+  dialog .btns .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  html[data-theme="dark"] dialog .btns .primary { color: #111; }
+  dialog .btns .spacer { flex: 1; }
 
   @media (max-width: 560px) {
     .dropdown button kbd { display: none; }
     #statusbar { gap: 12px; }
+    #sidebar {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 10;
+      width: min(82vw, 290px);
+      box-shadow: 4px 0 24px rgba(0,0,0,.25);
+    }
   }
 </style>
 </head>
@@ -190,6 +308,10 @@
       <button data-act="open">Open…<kbd>Ctrl+O</kbd></button>
       <button data-act="save">Save<kbd>Ctrl+S</kbd></button>
       <button data-act="saveas">Save As…<kbd>Ctrl+Shift+S</kbd></button>
+      <hr>
+      <button data-act="newnote">New Note…</button>
+      <button data-act="savetonotes">Save to Notes…</button>
+      <button data-act="syncsettings">Sync Settings…</button>
     </div>
   </div>
   <div class="menu" data-menu>
@@ -207,6 +329,7 @@
   <div class="menu" data-menu>
     <button type="button">View</button>
     <div class="dropdown">
+      <button data-act="sidebar"><span><span class="check" data-check="sidebar"></span> Notes Panel</span><kbd>Ctrl+B</kbd></button>
       <button data-act="wrap"><span><span class="check" data-check="wrap"></span> Word Wrap</span></button>
       <button data-act="theme"><span><span class="check" data-check="theme"></span> Dark Mode</span></button>
       <button data-act="statusbar"><span><span class="check" data-check="statusbar"></span> Status Bar</span></button>
@@ -229,11 +352,47 @@
   <button type="button" data-act="closefind" title="Close (Esc)">✕</button>
 </div>
 
-<textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
-          aria-label="Text editor"></textarea>
+<div id="main">
+  <nav id="sidebar" aria-label="Notes">
+    <div id="sidehead">
+      <span>Notes</span>
+      <button type="button" class="iconbtn" data-act="newnote" title="New note">+</button>
+      <button type="button" class="iconbtn" data-act="refresh" title="Refresh from GitHub">⟳</button>
+      <button type="button" class="iconbtn" data-act="syncsettings" title="Sync settings">⚙</button>
+    </div>
+    <div id="tree"></div>
+  </nav>
+  <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+            aria-label="Text editor"></textarea>
+</div>
+
+<dialog id="syncdlg">
+  <form method="dialog" id="syncform">
+    <h2>Sync notes with GitHub</h2>
+    <p>Notes are stored as files in a private GitHub repository, with folders shown
+      as a tree. Set this up once on each device.</p>
+    <label for="syncrepo">Repository (owner/name)</label>
+    <input id="syncrepo" placeholder="kevin101681/notes" autocomplete="off" spellcheck="false" required>
+    <label for="syncbranch">Branch</label>
+    <input id="syncbranch" placeholder="main" autocomplete="off" spellcheck="false">
+    <label for="synctoken">Access token</label>
+    <input id="synctoken" type="password" autocomplete="off" spellcheck="false" required>
+    <p>Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>
+      with access to only this repository and <b>Contents: Read and write</b>.
+      It is kept in this browser only.</p>
+    <p id="syncerr"></p>
+    <div class="btns">
+      <button type="button" id="syncoff">Disconnect</button>
+      <span class="spacer"></span>
+      <button type="button" id="synccancel">Cancel</button>
+      <button type="submit" class="primary" id="syncok">Connect</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="statusbar">
   <span id="saved"></span>
+  <span id="sync"></span>
   <span id="pos">Ln 1, Col 1</span>
   <span id="counts">0 words, 0 chars</span>
 </div>
@@ -249,17 +408,28 @@
   var findCount = document.getElementById("findcount");
   var statusbar = document.getElementById("statusbar");
   var savedEl = document.getElementById("saved");
+  var syncEl = document.getElementById("sync");
+  var sidebar = document.getElementById("sidebar");
+  var treeEl = document.getElementById("tree");
+  var narrow = matchMedia("(max-width: 560px)");
 
   var STORE = "notepad.state.v1";
+  var SYNC_STORE = "notepad.sync.v1";   // repo, branch, token — per device
+  var TREE_STORE = "notepad.tree.v1";   // last listing + open folders, for offline
   var fileHandle = null;          // File System Access API handle, when available
   var fileName = "Untitled.txt";
   var dirty = false;
   var savedTimer = null;
 
+  // The note being edited, when the buffer belongs to the synced repo:
+  // { path: "work/todo.txt", sha: "<blob sha last synced>" }. null = local buffer.
+  var note = null;
+
   var prefs = {
     wrap: true,
     dark: matchMedia("(prefers-color-scheme: dark)").matches,
     statusbar: true,
+    sidebar: !narrow.matches,
     fontSize: 15
   };
 
@@ -279,21 +449,32 @@
     if (typeof s.sel === "number") {
       ed.selectionStart = ed.selectionEnd = Math.min(s.sel, ed.value.length);
     }
+    if (s.note && s.note.path) {
+      note = { path: s.note.path, sha: s.note.sha || null };
+      fileName = baseName(note.path);
+      // Edits made offline or right before closing still need to reach GitHub.
+      dirty = !!s.dirty;
+    }
   }
 
   var saveTimer = null;
   function persist() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      try {
-        localStorage.setItem(STORE, JSON.stringify({
-          text: ed.value,
-          fileName: fileName,
-          prefs: prefs,
-          sel: ed.selectionStart
-        }));
-      } catch (e) { /* quota exceeded — editing still works */ }
-    }, 400);
+    saveTimer = setTimeout(persistNow, 400);
+  }
+
+  function persistNow() {
+    clearTimeout(saveTimer);
+    try {
+      localStorage.setItem(STORE, JSON.stringify({
+        text: ed.value,
+        fileName: fileName,
+        prefs: prefs,
+        sel: ed.selectionStart,
+        note: note && { path: note.path, sha: note.sha },
+        dirty: note ? dirty : false
+      }));
+    } catch (e) { /* quota exceeded — editing still works */ }
   }
 
   /* ---------------- chrome / prefs ---------------- */
@@ -302,10 +483,12 @@
     ed.classList.toggle("nowrap", !prefs.wrap);
     document.documentElement.dataset.theme = prefs.dark ? "dark" : "light";
     statusbar.classList.toggle("hidden", !prefs.statusbar);
+    sidebar.classList.toggle("hidden", !prefs.sidebar);
     ed.style.fontSize = prefs.fontSize + "px";
     setCheck("wrap", prefs.wrap);
     setCheck("theme", prefs.dark);
     setCheck("statusbar", prefs.statusbar);
+    setCheck("sidebar", prefs.sidebar);
     persist();
   }
 
@@ -320,6 +503,7 @@
 
   function markDirty() {
     if (!dirty) { dirty = true; setTitle(); }
+    if (note) schedulePush();
   }
 
   function flash(msg) {
@@ -346,11 +530,27 @@
   /* ---------------- file actions ---------------- */
 
   function confirmDiscard() {
+    // A note's pending edits are captured by pushNow() before the buffer changes.
+    if (note) {
+      if (dirty && !navigator.onLine &&
+          !confirm("You're offline and this note hasn't synced yet. Discard your changes?")) return false;
+      pushNow();
+      return true;
+    }
     return !dirty || confirm("You have unsaved changes. Discard them?");
+  }
+
+  // The buffer is about to hold something that isn't a synced note.
+  function detachNote() {
+    if (!note) return;
+    note = null;
+    setSync("");
+    renderTree();
   }
 
   function newFile() {
     if (!confirmDiscard()) return;
+    detachNote();
     ed.value = "";
     fileHandle = null;
     fileName = "Untitled.txt";
@@ -381,6 +581,7 @@
         fileName = file.name;
         return file.text();
       }).then(function (text) {
+        detachNote();
         ed.value = text;
         dirty = false;
         setTitle();
@@ -405,6 +606,7 @@
       var file = inp.files && inp.files[0];
       if (!file) return;
       file.text().then(function (text) {
+        detachNote();
         ed.value = text;
         fileName = file.name;
         fileHandle = null;
@@ -418,7 +620,9 @@
     inp.click();
   }
 
-  function download() {
+  // exportOnly: write a copy to disk without changing what the buffer is attached to
+  // (used for Save As on a synced note, which stays the note).
+  function download(exportOnly) {
     var blob = new Blob([ed.value], { type: "text/plain;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -426,15 +630,20 @@
     a.download = fileName;
     a.click();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    flash("Downloaded");
+    if (exportOnly) return;
     dirty = false;
     setTitle();
-    flash("Downloaded");
+  }
+
+  function writeTo(handle) {
+    return handle.createWritable().then(function (w) {
+      return w.write(ed.value).then(function () { return w.close(); });
+    });
   }
 
   function writeHandle() {
-    return fileHandle.createWritable().then(function (w) {
-      return w.write(ed.value).then(function () { return w.close(); });
-    }).then(function () {
+    return writeTo(fileHandle).then(function () {
       dirty = false;
       setTitle();
       flash("Saved");
@@ -442,6 +651,11 @@
   }
 
   function saveFile() {
+    if (note) {
+      if (!dirty) flash("Synced");
+      pushNow();
+      return;
+    }
     if (fileHandle) {
       writeHandle().catch(function (err) {
         if (cancelled(err)) return;
@@ -454,11 +668,15 @@
   }
 
   function saveAs() {
-    if (!hasFSA) { download(); return; }
+    var exportOnly = !!note;
+    if (!hasFSA) { download(exportOnly); return; }
     window.showSaveFilePicker({
       suggestedName: fileName,
       types: [{ description: "Text file", accept: { "text/plain": [".txt"] } }]
     }).then(function (handle) {
+      if (exportOnly) {
+        return writeTo(handle).then(function () { flash("Exported"); });
+      }
       fileHandle = handle;
       fileName = handle.name;
       return writeHandle();
@@ -466,9 +684,612 @@
       if (cancelled(err)) return;
       // Blocked (e.g. file:// origin) — download instead so Save always does something.
       hasFSA = false;
-      download();
+      download(exportOnly);
     });
   }
+
+  /* ---------------- GitHub sync ---------------- */
+
+  // Notes are plain files in a GitHub repo; folders in the repo are the tree. Every
+  // save is a commit through the Contents API, guarded by the blob sha so two devices
+  // can't silently overwrite each other.
+
+  var sync = null;        // { repo: "owner/name", branch, token } once set up on this device
+  var files = [];         // [{ path, sha }] — every note in the repo
+  var openDirs = {};      // folder path -> true while expanded
+  var treeMsg = "";       // error or offline notice shown above the tree
+  var seenShas = {};      // path -> { sha: true } for versions this device already had
+  var pushTimer = null;
+  var pushing = null;     // tail of the push queue, so commits never overlap
+  var lastPushed = {};    // { target, text } — skips a queued push that has nothing new
+  var lastRefresh = 0;
+
+  function loadSync() {
+    try {
+      sync = JSON.parse(localStorage.getItem(SYNC_STORE) || "null");
+      var t = JSON.parse(localStorage.getItem(TREE_STORE) || "null");
+      if (t) { files = t.files || []; openDirs = t.open || {}; }
+    } catch (e) { sync = null; }
+  }
+
+  function saveTreeCache() {
+    try {
+      localStorage.setItem(TREE_STORE, JSON.stringify({ files: files, open: openDirs }));
+    } catch (e) { /* offline tree is a convenience */ }
+  }
+
+  function setSync(msg, isError) {
+    syncEl.textContent = msg;
+    syncEl.classList.toggle("error", !!isError);
+  }
+
+  function failed(err) { setSync(err.message, true); }
+
+  function baseName(path) { return path.slice(path.lastIndexOf("/") + 1); }
+  function dirName(path) { var i = path.lastIndexOf("/"); return i === -1 ? "" : path.slice(0, i); }
+
+  function seen(path, sha) {
+    if (!sha) return;
+    (seenShas[path] || (seenShas[path] = {}))[sha] = true;
+  }
+
+  // UTF-8 safe base64 — btoa/atob on their own only handle Latin-1.
+  function b64encode(str) {
+    var bytes = new TextEncoder().encode(str), bin = "";
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  function b64decode(b64) {
+    var bin = atob(b64.replace(/\s/g, "")), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function gh(method, path, body, cfg) {
+    cfg = cfg || sync;
+    return fetch("https://api.github.com/repos/" + cfg.repo + path, {
+      method: method,
+      headers: {
+        Authorization: "Bearer " + cfg.token,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      // GitHub sends max-age=60; a cached listing would hide other devices' saves.
+      cache: "no-store"
+    }).then(function (res) {
+      return res.text().then(function (txt) {
+        var data = null;
+        try { data = txt ? JSON.parse(txt) : null; } catch (e) { /* non-JSON error body */ }
+        if (!res.ok) {
+          var err = new Error((data && data.message) || "HTTP " + res.status);
+          err.status = res.status;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  function contentsPath(path) {
+    return "/contents/" + path.split("/").map(encodeURIComponent).join("/");
+  }
+
+  function listNotes(cfg) {
+    cfg = cfg || sync;
+    return gh("GET", "/git/trees/" + encodeURIComponent(cfg.branch) + "?recursive=1", null, cfg)
+      .then(function (data) {
+        return data.tree.filter(function (t) {
+          return t.type === "blob" && !/(^|\/)\./.test(t.path);   // hide dotfiles and .github/
+        }).map(function (t) { return { path: t.path, sha: t.sha }; });
+      }, function (err) {
+        if (err.status === 409) return [];   // "Git Repository is empty" — no commits yet
+        if (err.status !== 404) throw err;
+        // After the last note is deleted the branch's tree is empty, which GitHub also
+        // reports as 404. Only a missing branch (or no access) is a real error.
+        return gh("GET", "/branches/" + encodeURIComponent(cfg.branch), null, cfg)
+          .then(function () { return []; }, function () { throw err; });
+      });
+  }
+
+  function readNote(sha) {
+    return gh("GET", "/git/blobs/" + sha).then(function (data) { return b64decode(data.content); });
+  }
+
+  function writeNote(path, text, sha, message) {
+    var body = {
+      message: message || (sha ? "Update " : "Create ") + path,
+      content: b64encode(text),
+      branch: sync.branch
+    };
+    if (sha) body.sha = sha;
+    return gh("PUT", contentsPath(path), body).then(function (data) {
+      seen(path, data.content.sha);
+      return data.content.sha;
+    });
+  }
+
+  function deleteRemote(path, sha) {
+    return gh("DELETE", contentsPath(path), { message: "Delete " + path, sha: sha, branch: sync.branch });
+  }
+
+  function fileAt(path) {
+    for (var i = 0; i < files.length; i++) if (files[i].path === path) return files[i];
+    return null;
+  }
+
+  function trackFile(path, sha) {
+    var f = fileAt(path);
+    if (f) f.sha = sha; else files.push({ path: path, sha: sha });
+    saveTreeCache();
+    renderTree();
+  }
+
+  function untrackFile(path) {
+    files = files.filter(function (f) { return f.path !== path; });
+    saveTreeCache();
+    renderTree();
+  }
+
+  /* ---- pushing edits ---- */
+
+  function schedulePush() {
+    clearTimeout(pushTimer);
+    setSync("Edited");
+    pushTimer = setTimeout(pushNow, 2500);
+  }
+
+  // Commit the open note. The text is captured right away, so callers may replace the
+  // buffer immediately afterwards.
+  function pushNow() {
+    clearTimeout(pushTimer);
+    if (!sync || !note || !dirty) return pushing || Promise.resolve();
+    var job = { target: note, text: ed.value };
+    var p = (pushing || Promise.resolve()).then(function () { return runPush(job); });
+    pushing = p;
+    p.then(function () { if (pushing === p) pushing = null; });
+    return p;
+  }
+
+  function runPush(job) {
+    var t = job.target;
+    if (lastPushed.target === t && lastPushed.text === job.text) return;
+    if (note === t) setSync("Saving…");
+    return writeNote(t.path, job.text, t.sha).then(function (sha) {
+      t.sha = sha;
+      lastPushed = { target: t, text: job.text };
+      trackFile(t.path, sha);
+      if (note === t) {
+        if (ed.value === job.text) { dirty = false; setTitle(); }
+        setSync(dirty ? "Edited" : "Synced");
+        persist();
+      }
+    }, function (err) {
+      // 409: sha is stale (saved elsewhere). 422: file appeared without us knowing its sha.
+      if (err.status === 409 || err.status === 422) return resolveConflict(job);
+      var what = note === t ? "" : " " + baseName(t.path);
+      setSync(navigator.onLine ? "Couldn't sync" + what + ": " + err.message
+                               : "Offline — kept on this device", true);
+    });
+  }
+
+  function resolveConflict(job) {
+    var t = job.target;
+    return gh("GET", contentsPath(t.path) + "?ref=" + encodeURIComponent(sync.branch)).then(function (remote) {
+      return remote.sha;
+    }, function (err) {
+      if (err.status === 404) return null;   // deleted on another device
+      throw err;
+    }).then(function (remoteSha) {
+      if (remoteSha && remoteSha === t.sha) throw new Error("GitHub rejected the save");
+      var overwrite = confirm('"' + t.path + '" was ' + (remoteSha ? "changed" : "deleted") +
+        " on another device.\n\nOK: replace it with this version\n" +
+        "Cancel: keep both (this version is saved as a copy)");
+      if (overwrite) {
+        t.sha = remoteSha;
+        return runPush(job);
+      }
+      var copy = conflictName(t.path);
+      var original = t.path;
+      return writeNote(copy, job.text, null).then(function (sha) {
+        if (remoteSha) trackFile(original, remoteSha); else untrackFile(original);
+        trackFile(copy, sha);
+        // Keep editing your own text, now under the copy's name.
+        t.path = copy;
+        t.sha = sha;
+        lastPushed = { target: t, text: job.text };
+        if (note === t) {
+          fileName = baseName(copy);
+          if (ed.value === job.text) dirty = false;
+          setTitle();
+          persist();
+          setSync("Saved as a copy");
+        }
+      });
+    }).catch(failed);
+  }
+
+  function conflictName(path) {
+    var d = new Date();
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    var stamp = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) +
+      " " + pad(d.getHours()) + "." + pad(d.getMinutes());
+    var m = /^(.*?)(\.[^./]*)?$/.exec(path);
+    return m[1] + " (conflict " + stamp + ")" + (m[2] || "");
+  }
+
+  /* ---- pulling changes ---- */
+
+  function refresh(force) {
+    if (!sync) { renderTree(); return Promise.resolve(); }
+    if (!force && Date.now() - lastRefresh < 15000) return Promise.resolve();
+    lastRefresh = Date.now();
+    return listNotes().then(function (list) {
+      files = list;
+      treeMsg = "";
+      var n = note;
+      var f = n && fileAt(n.path);
+      // A listing can lag behind our own commit; never treat an older version as news.
+      if (f && f.sha !== n.sha && seenShas[n.path] && seenShas[n.path][f.sha]) f.sha = n.sha;
+      saveTreeCache();
+      renderTree();
+      if (!f || f.sha === n.sha || dirty || pushing) return;
+      // Changed on another device and nothing local to lose: take the new version.
+      return readNote(f.sha).then(function (text) {
+        if (note !== n || dirty) return;
+        var pos = ed.selectionStart, top = ed.scrollTop;
+        n.sha = f.sha;
+        seen(n.path, f.sha);
+        ed.value = text;
+        ed.setSelectionRange(Math.min(pos, ed.value.length), Math.min(pos, ed.value.length));
+        ed.scrollTop = top;
+        updateStatus();
+        persist();
+        flash("Updated from another device");
+      });
+    }).catch(function (err) {
+      treeMsg = err.status === 401 ? "GitHub rejected the token. Check Sync Settings."
+        : err.status === 404 ? "Repository or branch not found. Check Sync Settings."
+        : navigator.onLine ? "Couldn't load notes: " + err.message
+        : "Offline. Showing the notes from your last visit.";
+      renderTree();
+    });
+  }
+
+  /* ---- note actions ---- */
+
+  function showNote(n, text) {
+    if (note && note !== n) pushNow();
+    note = n;
+    seen(n.path, n.sha);
+    fileHandle = null;
+    fileName = baseName(n.path);
+    ed.value = text;
+    ed.setSelectionRange(0, 0);
+    ed.scrollTop = 0;
+    dirty = false;
+    expandTo(n.path);
+    setTitle();
+    updateStatus();
+    persist();
+    setSync("Synced");
+    renderTree();
+    if (narrow.matches) { prefs.sidebar = false; applyPrefs(); }
+    ed.focus();
+  }
+
+  function openNote(path) {
+    var f = fileAt(path);
+    if (!f) return;
+    if (note && note.path === path) {
+      if (narrow.matches) { prefs.sidebar = false; applyPrefs(); }
+      ed.focus();
+      return;
+    }
+    if (!confirmDiscard()) return;
+    setSync("Opening…");
+    readNote(f.sha).then(function (text) {
+      showNote({ path: f.path, sha: f.sha }, text);
+    }, function (err) {
+      setSync(navigator.onLine ? "Couldn't open: " + err.message : "Offline — can't open notes", true);
+    });
+  }
+
+  // Normalise a user-typed path: trims slashes, rejects hidden or relative segments,
+  // and adds .txt when there's no extension.
+  function askPath(message, suggestion) {
+    var raw = prompt(message, suggestion);
+    if (raw === null) return null;
+    var parts = raw.trim().split("/").map(function (s) { return s.trim(); })
+      .filter(function (s) { return s; });
+    if (!parts.length) return null;
+    if (parts.some(function (s) { return s.charAt(0) === "."; })) {
+      alert("Names can't start with a dot.");
+      return null;
+    }
+    if (parts[parts.length - 1].indexOf(".") === -1) parts[parts.length - 1] += ".txt";
+    return parts.join("/");
+  }
+
+  function newNote(folder) {
+    if (!sync) { openSyncSettings(); return; }
+    if (folder === undefined) folder = note ? dirName(note.path) : "";
+    var path = askPath("New note (use / for folders):", (folder ? folder + "/" : "") + "Untitled.txt");
+    if (!path) return;
+    if (fileAt(path)) { openNote(path); return; }
+    if (!confirmDiscard()) return;
+    setSync("Creating…");
+    writeNote(path, "", null).then(function (sha) {
+      trackFile(path, sha);
+      showNote({ path: path, sha: sha }, "");
+    }, failed);
+  }
+
+  function saveToNotes() {
+    if (!sync) { openSyncSettings(); return; }
+    var folder = note ? dirName(note.path) : "";
+    var path = askPath("Save to notes as (use / for folders):", (folder ? folder + "/" : "") + fileName);
+    if (!path) return;
+    var existing = fileAt(path);
+    if (existing && !(note && note.path === path) &&
+        !confirm('"' + path + '" already exists. Replace it?')) return;
+    if (note) pushNow();
+    var text = ed.value;
+    setSync("Saving…");
+    (pushing || Promise.resolve()).then(function () {
+      var cur = fileAt(path);
+      return writeNote(path, text, cur ? cur.sha : null);
+    }).then(function (sha) {
+      trackFile(path, sha);
+      note = { path: path, sha: sha };
+      lastPushed = { target: note, text: text };
+      fileHandle = null;
+      fileName = baseName(path);
+      dirty = ed.value !== text;
+      expandTo(path);
+      setTitle();
+      persist();
+      renderTree();
+      if (dirty) schedulePush(); else setSync("Synced");
+    }, failed);
+  }
+
+  function renameNote(path) {
+    var f = fileAt(path);
+    if (!f) return;
+    var to = askPath("Rename or move to:", path);
+    if (!to || to === path) return;
+    if (fileAt(to)) { alert('"' + to + '" already exists.'); return; }
+    var isOpen = note && note.path === path;
+    setSync("Renaming…");
+    var textReady = isOpen ? pushNow().then(function () { return ed.value; }) : readNote(f.sha);
+    textReady.then(function (text) {
+      return writeNote(to, text, null, "Rename " + path + " to " + to).then(function (sha) {
+        trackFile(to, sha);
+        if (isOpen && note && note.path === path) {
+          note.path = to;
+          note.sha = sha;
+          lastPushed = { target: note, text: text };
+          fileName = baseName(to);
+          if (ed.value === text) dirty = false;
+          setTitle();
+          persist();
+        }
+        return deleteRemote(path, fileAt(path).sha);
+      });
+    }).then(function () {
+      untrackFile(path);
+      expandTo(to);
+      renderTree();
+      setSync(dirty ? "Edited" : "Synced");
+    }, failed);
+  }
+
+  function deleteNote(path) {
+    var f = fileAt(path);
+    if (!f) return;
+    if (!confirm('Delete "' + path + '"?\n\nIt stays recoverable in the repository history.')) return;
+    deleteRemote(path, f.sha).then(function () {
+      untrackFile(path);
+      if (note && note.path === path) {
+        clearTimeout(pushTimer);
+        note = null;
+        ed.value = "";
+        fileName = "Untitled.txt";
+        dirty = false;
+        setTitle();
+        updateStatus();
+        persist();
+      }
+      setSync("");
+      flash("Deleted " + baseName(path));
+    }, failed);
+  }
+
+  /* ---- tree ---- */
+
+  function expandTo(path) {
+    var parts = path.split("/");
+    for (var i = 1; i < parts.length; i++) openDirs[parts.slice(0, i).join("/")] = true;
+    saveTreeCache();
+  }
+
+  function buildTree() {
+    var root = { dirs: {}, files: [] };
+    files.forEach(function (f) {
+      var parts = f.path.split("/"), node = root;
+      for (var i = 0; i < parts.length - 1; i++) {
+        node = node.dirs[parts[i]] || (node.dirs[parts[i]] = {
+          path: parts.slice(0, i + 1).join("/"), dirs: {}, files: []
+        });
+      }
+      node.files.push(f);
+    });
+    return root;
+  }
+
+  function byName(a, b) { return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }); }
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+
+  function treeButton(kind, glyph, title) {
+    var b = el("button", "iconbtn", glyph);
+    b.type = "button";
+    b.dataset.tree = kind;
+    b.title = title;
+    return b;
+  }
+
+  function renderDir(node) {
+    var ul = el("ul");
+    Object.keys(node.dirs).sort(byName).forEach(function (name) {
+      var d = node.dirs[name], open = !!openDirs[d.path];
+      var li = el("li"), row = el("div", "row");
+      row.dataset.dir = d.path;
+      row.tabIndex = 0;
+      row.setAttribute("aria-expanded", open);
+      row.appendChild(el("span", "tw", open ? "▾" : "▸"));
+      row.appendChild(el("span", "name", name));
+      row.appendChild(treeButton("new", "+", "New note in " + name));
+      li.appendChild(row);
+      if (open) li.appendChild(renderDir(d));
+      ul.appendChild(li);
+    });
+    node.files.sort(function (a, b) { return byName(baseName(a.path), baseName(b.path)); })
+      .forEach(function (f) {
+        var li = el("li"), row = el("div", "row");
+        row.dataset.path = f.path;
+        row.tabIndex = 0;
+        row.title = f.path;
+        if (note && note.path === f.path) row.classList.add("active");
+        row.appendChild(el("span", "tw"));
+        row.appendChild(el("span", "name", baseName(f.path)));
+        row.appendChild(treeButton("rename", "✎", "Rename or move"));
+        row.appendChild(treeButton("delete", "✕", "Delete"));
+        li.appendChild(row);
+        ul.appendChild(li);
+      });
+    return ul;
+  }
+
+  function renderTree() {
+    treeEl.textContent = "";
+    if (!sync) {
+      var intro = el("div", "treemsg", "Keep notes in a private GitHub repository and open them on every device. ");
+      var setup = el("button", "", "Set up sync…");
+      setup.type = "button";
+      setup.dataset.act = "syncsettings";
+      intro.appendChild(setup);
+      treeEl.appendChild(intro);
+      return;
+    }
+    if (treeMsg) treeEl.appendChild(el("div", "treemsg", treeMsg));
+    if (!files.length) {
+      if (!treeMsg) treeEl.appendChild(el("div", "treemsg", "No notes yet. Use + to create one."));
+      return;
+    }
+    treeEl.appendChild(renderDir(buildTree()));
+  }
+
+  treeEl.addEventListener("click", function (e) {
+    var row = e.target.closest(".row");
+    if (!row) return;
+    var btn = e.target.closest("button[data-tree]");
+    if (btn) {
+      e.stopPropagation();
+      if (btn.dataset.tree === "new") newNote(row.dataset.dir);
+      else if (btn.dataset.tree === "rename") renameNote(row.dataset.path);
+      else if (btn.dataset.tree === "delete") deleteNote(row.dataset.path);
+      return;
+    }
+    if (row.dataset.dir) {
+      if (openDirs[row.dataset.dir]) delete openDirs[row.dataset.dir];
+      else openDirs[row.dataset.dir] = true;
+      saveTreeCache();
+      renderTree();
+      var again = treeEl.querySelector('[data-dir="' + CSS.escape(row.dataset.dir) + '"]');
+      if (again) again.focus();
+    } else {
+      openNote(row.dataset.path);
+    }
+  });
+
+  treeEl.addEventListener("keydown", function (e) {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("row")) {
+      e.preventDefault();
+      e.target.click();
+    }
+  });
+
+  /* ---- settings dialog ---- */
+
+  var dlg = document.getElementById("syncdlg");
+  var dlgRepo = document.getElementById("syncrepo");
+  var dlgBranch = document.getElementById("syncbranch");
+  var dlgToken = document.getElementById("synctoken");
+  var dlgErr = document.getElementById("syncerr");
+
+  function openSyncSettings() {
+    dlgRepo.value = sync ? sync.repo : "";
+    dlgBranch.value = sync ? sync.branch : "main";
+    dlgToken.value = sync ? sync.token : "";
+    dlgErr.textContent = "";
+    document.getElementById("syncoff").hidden = !sync;
+    document.getElementById("syncok").textContent = sync ? "Save" : "Connect";
+    dlg.showModal();
+  }
+
+  document.getElementById("syncform").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var repo = dlgRepo.value.trim()
+      .replace(/^(https?:\/\/)?github\.com\//i, "").replace(/\.git$/, "").replace(/\/+$/, "");
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { dlgErr.textContent = "Use the form owner/name."; return; }
+    var cfg = { repo: repo, branch: dlgBranch.value.trim() || "main", token: dlgToken.value.trim() };
+    dlgErr.textContent = "Checking…";
+    listNotes(cfg).then(function (list) {
+      if (sync && sync.repo !== cfg.repo) detachNote();
+      sync = cfg;
+      try { localStorage.setItem(SYNC_STORE, JSON.stringify(sync)); } catch (err) { /* stays for this session */ }
+      files = list;
+      treeMsg = "";
+      lastRefresh = Date.now();
+      saveTreeCache();
+      dlg.close();
+      prefs.sidebar = true;
+      applyPrefs();
+      renderTree();
+      setSync("Connected");
+      if (note && dirty) pushNow();
+    }, function (err) {
+      dlgErr.textContent = err.status === 401 ? "GitHub rejected that token."
+        : err.status === 404 ? "Not found. Check the repository and branch, and that the token can access this repository."
+        : navigator.onLine ? err.message : "You're offline.";
+    });
+  });
+
+  document.getElementById("synccancel").addEventListener("click", function () { dlg.close(); });
+
+  document.getElementById("syncoff").addEventListener("click", function () {
+    if (!confirm("Stop syncing on this device? Your notes stay on GitHub.")) return;
+    detachNote();
+    sync = null;
+    files = [];
+    treeMsg = "";
+    try {
+      localStorage.removeItem(SYNC_STORE);
+      localStorage.removeItem(TREE_STORE);
+    } catch (err) { /* nothing stored */ }
+    dlg.close();
+    renderTree();
+  });
 
   /* ---------------- find & replace ---------------- */
 
@@ -629,7 +1450,12 @@
     findprev: function () { findNext(true); },
     replace: replaceOne,
     replaceall: replaceAll,
-    closefind: closeFind
+    closefind: closeFind,
+    sidebar: function () { prefs.sidebar = !prefs.sidebar; applyPrefs(); if (prefs.sidebar) refresh(); },
+    newnote: function () { newNote(); },
+    savetonotes: saveToNotes,
+    syncsettings: openSyncSettings,
+    refresh: function () { refresh(true); }
   };
 
   document.addEventListener("click", function (e) {
@@ -643,6 +1469,7 @@
 
   document.addEventListener("keydown", function (e) {
     var mod = e.ctrlKey || e.metaKey;
+    if (dlg.open) return;   // the dialog handles its own keys, including Escape
 
     if (e.key === "Escape") {
       closeMenus();
@@ -658,6 +1485,7 @@
       case "o": e.preventDefault(); openFile(); break;
       case "n": e.preventDefault(); newFile(); break;
       case "f": e.preventDefault(); openFind(); break;
+      case "b": e.preventDefault(); actions.sidebar(); break;
       case "h": e.preventDefault(); openFind(); replaceInput.focus(); break;
       case "g": e.preventDefault(); findNext(e.shiftKey); break;
       case "=": case "+": e.preventDefault(); setZoom(1); break;
@@ -692,6 +1520,11 @@
     if (findbar.classList.contains("show")) updateFindCount();
   });
 
+  // On a phone-width screen the panel overlays the text; tapping the text dismisses it.
+  ed.addEventListener("pointerdown", function () {
+    if (narrow.matches && prefs.sidebar) { prefs.sidebar = false; applyPrefs(); }
+  });
+
   ["click", "keyup", "select", "focus"].forEach(function (evt) {
     ed.addEventListener(evt, updateStatus);
   });
@@ -704,6 +1537,7 @@
     var file = e.dataTransfer && e.dataTransfer.files[0];
     if (!file || !confirmDiscard()) return;
     file.text().then(function (text) {
+      detachNote();
       ed.value = text;
       fileName = file.name;
       fileHandle = null;
@@ -715,17 +1549,34 @@
   });
 
   window.addEventListener("beforeunload", function (e) {
+    persistNow();
+    // A note's edits are kept locally and pushed on the next launch, so no prompt.
+    if (note) { pushNow(); return; }
     if (!dirty) return;
     e.preventDefault();
     e.returnValue = "";
   });
 
+  // Push when leaving the tab, pull when coming back — that's what keeps devices in step.
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { persistNow(); pushNow(); } else refresh();
+  });
+  window.addEventListener("focus", function () { refresh(); });
+  window.addEventListener("online", function () { pushNow(); refresh(true); });
+  setInterval(function () { if (!document.hidden) refresh(); }, 60000);
+
   /* ---------------- boot ---------------- */
 
+  loadSync();
   load();
   applyPrefs();
   setTitle();
   updateStatus();
+  renderTree();
+  if (sync) {
+    if (note && dirty) pushNow(); else if (note) setSync("Synced");
+    refresh(true);
+  }
   ed.focus();
 
   // Offline support when served over http(s); silently skipped on file://.
