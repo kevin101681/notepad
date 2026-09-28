@@ -6,72 +6,118 @@
 <title>Untitled - Notepad</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<meta name="theme-color" content="#1f1f1f" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#fdfcff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  /* Palette, radius and elevation match the Claude Dashboard (Material 3, slate
+     primary #5f8da1, Roboto, pill buttons, soft shadows) so the two read as one
+     family. Roboto is native on ChromeOS; elsewhere it comes from Google Fonts
+     and falls back to the system face offline. */
   :root {
-    --bg: #ffffff;
-    --fg: #1a1a1a;
-    --chrome: #f3f3f3;
-    --border: #d4d4d4;
-    --hover: #e5e5e5;
-    --accent: #0067c0;
-    --muted: #5a5a5a;
+    --bg: #fdfcff;
+    --surface: #ffffff;
+    --surface-variant: #f0f4f5;
+    --border: #dce4e9;
+    --text: #3d4b55;
+    --text-muted: #5f6b72;
+    --primary: #5f8da1;
+    --primary-hover: #4a7585;
+    --primary-container: #e3f0f5;
+    --on-primary-container: #2f3d47;
+    --red: #c62828;
+    --red-container: #fdecea;
+    --radius: 14px;
+    --shadow-1: 0 1px 2px 0 rgba(0,0,0,.12), 0 1px 3px 1px rgba(0,0,0,.08);
+    --shadow-2: 0 1px 2px 0 rgba(0,0,0,.14), 0 2px 6px 2px rgba(0,0,0,.10);
+    color-scheme: light;
   }
   html[data-theme="dark"] {
-    --bg: #1f1f1f;
-    --fg: #e8e8e8;
-    --chrome: #2b2b2b;
-    --border: #3d3d3d;
-    --hover: #3a3a3a;
-    --accent: #4cc2ff;
-    --muted: #9a9a9a;
+    --bg: #0f1519;
+    --surface: #171f25;
+    --surface-variant: #202b32;
+    --border: #2c3a44;
+    --text: #d3dce2;
+    --text-muted: #8b99a2;
+    --primary: #5f8da1;
+    --primary-hover: #7ba7ba;
+    --primary-container: #21333c;
+    --on-primary-container: #cfe6ef;
+    --red: #ef6f6c;
+    --red-container: #3a2020;
+    --shadow-1: 0 1px 2px 0 rgba(0,0,0,.35), 0 1px 3px 1px rgba(0,0,0,.25);
+    --shadow-2: 0 1px 2px 0 rgba(0,0,0,.40), 0 2px 8px 2px rgba(0,0,0,.30);
+    color-scheme: dark;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     height: 100%;
     margin: 0;
     overflow: hidden;
-    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    font-family: Roboto, -apple-system, "Segoe UI", sans-serif;
     font-size: 14px;
     background: var(--bg);
-    color: var(--fg);
+    color: var(--text);
   }
   body { display: flex; flex-direction: column; }
+  [hidden] { display: none !important; }
 
-  /* ---- menu bar ---- */
+  /* ---- buttons (dashboard .btn) ---- */
+  .btn {
+    background: var(--surface);
+    color: var(--primary-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, box-shadow .15s;
+  }
+  .btn:hover, .btn:active { background: var(--surface-variant); }
+  .btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-1);
+  }
+  .btn.primary:hover, .btn.primary:active { background: var(--primary-hover); }
+  .btn.danger { color: var(--red); border-color: rgba(198,40,40,.35); }
+  .btn.danger:hover, .btn.danger:active { background: var(--red-container); }
+  .btn.small { padding: 5px 12px; font-size: 12px; }
+  .btn.icon { padding: 6px 12px; line-height: 0; }
+  .btn svg { width: 18px; height: 18px; }
+  .btn.small.icon { padding: 5px 9px; }
+  .btn.small.icon svg { width: 16px; height: 16px; }
+
+  /* ---- header bar (dashboard #appHeader) ---- */
   #menubar {
     display: flex;
     align-items: center;
-    gap: 2px;
-    padding: 3px 4px;
-    background: var(--chrome);
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
     flex: none;
     user-select: none;
   }
+  #menubar .right { margin-left: auto; display: flex; gap: 8px; }
   .menu { position: relative; }
-  .menu > button {
-    font: inherit;
-    color: inherit;
-    background: none;
-    border: 0;
-    padding: 5px 11px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  .menu > button:hover, .menu.open > button { background: var(--hover); }
+  .menu.open > .btn { background: var(--surface-variant); }
   .dropdown {
     position: absolute;
     top: 100%;
     left: 0;
-    min-width: 230px;
-    margin-top: 3px;
-    padding: 4px;
-    background: var(--chrome);
+    min-width: 250px;
+    margin-top: 6px;
+    padding: 6px;
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.22);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
     z-index: 20;
     display: none;
   }
@@ -82,218 +128,230 @@
     gap: 24px;
     width: 100%;
     font: inherit;
-    color: inherit;
+    color: var(--text);
     background: none;
     border: 0;
-    padding: 7px 10px;
-    border-radius: 4px;
+    padding: 8px 12px;
+    border-radius: 10px;
     text-align: left;
     cursor: pointer;
     white-space: nowrap;
   }
-  .dropdown button:hover { background: var(--hover); }
-  .dropdown button kbd {
-    font: inherit;
-    color: var(--muted);
-  }
-  .dropdown hr {
-    border: 0;
-    border-top: 1px solid var(--border);
-    margin: 4px 2px;
-  }
-  .check { width: 1em; display: inline-block; }
-
-  /* ---- editor ---- */
-  #editor {
-    flex: 1;
-    width: 100%;
-    min-height: 0;
-    padding: 8px 10px;
-    border: 0;
-    outline: none;
-    resize: none;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: Consolas, "Cascadia Mono", "Roboto Mono", ui-monospace, monospace;
-    font-size: 15px;
-    line-height: 1.45;
-    tab-size: 4;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-  }
-  #editor.nowrap { white-space: pre; overflow-wrap: normal; overflow-x: auto; }
+  .dropdown button:hover { background: var(--surface-variant); }
+  .dropdown button kbd { font: inherit; font-size: 12px; color: var(--text-muted); }
+  .dropdown hr { border: 0; border-top: 1px solid var(--border); margin: 5px 4px; }
+  .check { width: 1em; display: inline-block; color: var(--primary); font-weight: 700; }
 
   /* ---- find bar ---- */
   #findbar {
     display: none;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    background: var(--chrome);
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
     flex: none;
   }
   #findbar.show { display: flex; }
   #findbar input {
     font: inherit;
-    padding: 4px 7px;
+    padding: 7px 14px;
     min-width: 0;
     flex: 1 1 160px;
-    max-width: 240px;
-    background: var(--bg);
-    color: var(--fg);
+    max-width: 260px;
+    background: var(--surface);
+    color: var(--text);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius);
   }
-  #findbar input:focus { outline: 1px solid var(--accent); }
-  #findbar button {
-    font: inherit;
-    color: inherit;
-    background: var(--bg);
+  #findbar input:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
+  #findcount { color: var(--text-muted); font-size: 12px; flex: none; min-width: 68px; }
+
+  /* ---- workspace: notes column + editor card ---- */
+  #main { flex: 1; display: flex; gap: 14px; min-height: 0; padding: 14px; position: relative; }
+
+  #sidebar { width: 290px; flex: none; display: flex; flex-direction: column; min-height: 0; user-select: none; }
+  #sidebar.hidden { display: none; }
+  #sidehead { display: flex; align-items: center; gap: 6px; padding: 0 2px 10px; }
+  #sidehead h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+  }
+  #tree {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px;
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 4px 10px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+    scrollbar-width: none;
+  }
+  #tree::-webkit-scrollbar { display: none; }
+  #tree ul { list-style: none; margin: 0; padding: 0; }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 4px 6px 4px calc(8px + var(--depth, 0) * 18px);
+    border-radius: 10px;
     cursor: pointer;
+    white-space: nowrap;
   }
-  #findbar button:hover { background: var(--hover); }
-  #findcount { color: var(--muted); flex: none; min-width: 68px; }
+  .row:hover { background: var(--surface-variant); }
+  .row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .row.active { background: var(--primary-container); color: var(--on-primary-container); font-weight: 500; }
+  .row .chev { width: 14px; flex: none; color: var(--text-muted); display: flex; transition: transform .15s; }
+  .row[aria-expanded="true"] .chev { transform: rotate(90deg); }
+  .row .chev svg { width: 14px; height: 14px; }
+  .row .ficon { flex: none; display: flex; color: var(--primary); }
+  .row .ficon svg { width: 18px; height: 18px; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .row .act {
+    flex: none;
+    display: flex;
+    background: none;
+    border: 0;
+    padding: 5px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+  }
+  .row .act svg { width: 15px; height: 15px; }
+  .row:hover .act, .row.active .act, .row .act:focus-visible { opacity: .75; }
+  .row .act:hover { opacity: 1; background: var(--surface); color: var(--primary-hover); }
+  .row .act.del:hover { color: var(--red); }
+  @media (hover: none) { .row .act { opacity: .7; } }
+  .treemsg { padding: 10px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+  .treemsg .btn { display: block; margin-top: 12px; }
+
+  #editor {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 18px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+    outline: none;
+    resize: none;
+    font-family: "Cascadia Mono", Consolas, "Roboto Mono", Menlo, ui-monospace, monospace;
+    font-size: 15px;
+    line-height: 1.5;
+    tab-size: 4;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    transition: border-color .15s;
+  }
+  #editor:focus { border-color: var(--primary); }
+  #editor.nowrap { white-space: pre; overflow-wrap: normal; overflow-x: auto; }
 
   /* ---- status bar ---- */
   #statusbar {
     display: flex;
     justify-content: flex-end;
     gap: 22px;
-    padding: 4px 12px;
-    background: var(--chrome);
-    border-top: 1px solid var(--border);
-    color: var(--muted);
+    padding: 0 16px 10px;
+    color: var(--text-muted);
     font-size: 12px;
     flex: none;
     user-select: none;
   }
   #statusbar span:first-child { margin-right: auto; }
   #statusbar.hidden { display: none; }
-  #sync.error { color: #c42b1c; }
-  html[data-theme="dark"] #sync.error { color: #ff99a4; }
+  #sync.error { color: var(--red); }
 
-  /* ---- notes sidebar ---- */
-  #main { flex: 1; display: flex; min-height: 0; position: relative; }
-  #sidebar {
-    width: 250px;
-    flex: none;
+  /* ---- sync settings (dashboard .popover) ---- */
+  dialog {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    width: min(420px, calc(100vw - 24px));
+    box-shadow: var(--shadow-2);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.28); }
+  dialog h3 { margin: 0 0 8px; font-weight: 500; font-size: 16px; }
+  dialog p { margin: 0 0 16px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+  dialog a { color: var(--primary-hover); font-weight: 500; }
+  dialog label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 16px; color: var(--text-muted); }
+  dialog input {
+    display: block;
+    width: 100%;
+    margin-top: 9px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font: inherit;
+    font-size: 14px;
+  }
+  dialog input:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
+  #syncerr { color: var(--red); margin: 0; min-height: 1.2em; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+  .dialog-actions .spacer { flex: 1; }
+
+  /* ---- toasts (dashboard #toasts) ---- */
+  #toasts {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 80;
     display: flex;
     flex-direction: column;
-    background: var(--chrome);
-    border-right: 1px solid var(--border);
-    user-select: none;
-  }
-  #sidebar.hidden { display: none; }
-  #sidehead {
-    display: flex;
     align-items: center;
-    gap: 2px;
-    padding: 5px 5px 5px 12px;
-    border-bottom: 1px solid var(--border);
-    font-weight: 600;
+    gap: 8px;
+    pointer-events: none;
   }
-  #sidehead span { flex: 1; }
-  .iconbtn {
-    font: inherit;
-    color: var(--muted);
-    background: none;
-    border: 0;
-    border-radius: 4px;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    cursor: pointer;
-    line-height: 1;
-    flex: none;
+  .toast {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-2);
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 500;
+    max-width: calc(100vw - 32px);
+    animation: toast-in .18s ease-out;
+    transition: opacity .2s, transform .2s;
   }
-  .iconbtn:hover { background: var(--hover); color: var(--fg); }
-  #tree { flex: 1; overflow: auto; padding: 4px; }
-  #tree ul { list-style: none; margin: 0; padding: 0; }
-  #tree ul ul { padding-left: 14px; }
-  .row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 2px 2px 4px;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .row:hover { background: var(--hover); }
-  .row.active { background: var(--hover); color: var(--accent); }
-  .row .tw { width: 1em; flex: none; text-align: center; color: var(--muted); font-size: 14px; }
-  .row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; padding: 3px 0; }
-  .row .iconbtn { width: 22px; height: 22px; visibility: hidden; }
-  .row:hover .iconbtn, .row.active .iconbtn { visibility: visible; }
-  @media (hover: none) { .row .iconbtn { visibility: visible; } }
-  .treemsg { padding: 10px 12px; color: var(--muted); font-size: 13px; line-height: 1.45; }
-  .treemsg button {
-    font: inherit;
-    color: var(--accent);
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+  .toast.leaving { opacity: 0; transform: translateY(-6px); }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } }
 
-  /* ---- sync settings dialog ---- */
-  dialog {
-    background: var(--chrome);
-    color: var(--fg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 18px 20px;
-    width: min(440px, calc(100vw - 32px));
-    box-shadow: 0 12px 40px rgba(0,0,0,.3);
-  }
-  dialog::backdrop { background: rgba(0,0,0,.35); }
-  dialog h2 { font-size: 16px; margin: 0 0 6px; }
-  dialog p { margin: 6px 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
-  dialog a { color: var(--accent); }
-  dialog label { display: block; margin: 12px 0 4px; font-size: 13px; }
-  dialog input {
-    width: 100%;
-    font: inherit;
-    padding: 6px 8px;
-    background: var(--bg);
-    color: var(--fg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
-  dialog input:focus { outline: 1px solid var(--accent); }
-  #syncerr { color: #c42b1c; min-height: 1.2em; }
-  html[data-theme="dark"] #syncerr { color: #ff99a4; }
-  dialog .btns { display: flex; gap: 8px; margin-top: 14px; }
-  dialog .btns button {
-    font: inherit;
-    color: inherit;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 6px 14px;
-    cursor: pointer;
-  }
-  dialog .btns button:hover { background: var(--hover); }
-  dialog .btns .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  html[data-theme="dark"] dialog .btns .primary { color: #111; }
-  dialog .btns .spacer { flex: 1; }
-
-  @media (max-width: 560px) {
+  @media (max-width: 600px) {
+    #menubar { padding: 8px 10px; gap: 6px; }
+    #menubar .btn { padding: 7px 12px; }
+    #menubar .btn.icon { padding: 6px 10px; }
     .dropdown button kbd { display: none; }
-    #statusbar { gap: 12px; }
+    #main { padding: 8px; }
+    #statusbar { gap: 12px; padding: 0 12px 8px; }
     #sidebar {
       position: absolute;
       top: 0;
       bottom: 0;
       left: 0;
       z-index: 10;
-      width: min(82vw, 290px);
-      box-shadow: 4px 0 24px rgba(0,0,0,.25);
+      width: min(86vw, 320px);
+      padding: 12px;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      box-shadow: var(--shadow-2);
     }
   }
 </style>
@@ -301,8 +359,9 @@
 <body>
 
 <div id="menubar">
+  <button type="button" class="btn icon" data-act="sidebar" data-icon="panel" title="Notes panel (Ctrl+B)"></button>
   <div class="menu" data-menu>
-    <button type="button">File</button>
+    <button type="button" class="btn">File</button>
     <div class="dropdown">
       <button data-act="new">New<kbd>Ctrl+N</kbd></button>
       <button data-act="open">Open…<kbd>Ctrl+O</kbd></button>
@@ -315,7 +374,7 @@
     </div>
   </div>
   <div class="menu" data-menu>
-    <button type="button">Edit</button>
+    <button type="button" class="btn">Edit</button>
     <div class="dropdown">
       <button data-act="undo">Undo<kbd>Ctrl+Z</kbd></button>
       <button data-act="redo">Redo<kbd>Ctrl+Y</kbd></button>
@@ -327,7 +386,7 @@
     </div>
   </div>
   <div class="menu" data-menu>
-    <button type="button">View</button>
+    <button type="button" class="btn">View</button>
     <div class="dropdown">
       <button data-act="sidebar"><span><span class="check" data-check="sidebar"></span> Notes Panel</span><kbd>Ctrl+B</kbd></button>
       <button data-act="wrap"><span><span class="check" data-check="wrap"></span> Word Wrap</span></button>
@@ -339,26 +398,29 @@
       <button data-act="zoomreset">Reset Zoom<kbd>Ctrl+0</kbd></button>
     </div>
   </div>
+  <div class="right">
+    <button type="button" class="btn icon" data-act="theme" id="themebtn" title="Toggle dark mode"></button>
+  </div>
 </div>
 
 <div id="findbar">
   <input id="findinput" type="text" placeholder="Find" aria-label="Find">
-  <button type="button" data-act="findprev" title="Previous (Shift+Enter)">▲</button>
-  <button type="button" data-act="findnext" title="Next (Enter)">▼</button>
+  <button type="button" class="btn small icon" data-act="findprev" data-icon="chevronUp" title="Previous (Shift+Enter)"></button>
+  <button type="button" class="btn small icon" data-act="findnext" data-icon="chevronDown" title="Next (Enter)"></button>
   <span id="findcount"></span>
   <input id="replaceinput" type="text" placeholder="Replace with" aria-label="Replace with">
-  <button type="button" data-act="replace">Replace</button>
-  <button type="button" data-act="replaceall">All</button>
-  <button type="button" data-act="closefind" title="Close (Esc)">✕</button>
+  <button type="button" class="btn small" data-act="replace">Replace</button>
+  <button type="button" class="btn small" data-act="replaceall">All</button>
+  <button type="button" class="btn small icon" data-act="closefind" data-icon="close" title="Close (Esc)"></button>
 </div>
 
 <div id="main">
   <nav id="sidebar" aria-label="Notes">
     <div id="sidehead">
-      <span>Notes</span>
-      <button type="button" class="iconbtn" data-act="newnote" title="New note">+</button>
-      <button type="button" class="iconbtn" data-act="refresh" title="Refresh from GitHub">⟳</button>
-      <button type="button" class="iconbtn" data-act="syncsettings" title="Sync settings">⚙</button>
+      <h2>Notes</h2>
+      <button type="button" class="btn small icon" data-act="newnote" data-icon="plus" title="New note"></button>
+      <button type="button" class="btn small icon" data-act="refresh" data-icon="refresh" title="Refresh from GitHub"></button>
+      <button type="button" class="btn small icon" data-act="syncsettings" data-icon="settings" title="Sync settings"></button>
     </div>
     <div id="tree"></div>
   </nav>
@@ -368,34 +430,38 @@
 
 <dialog id="syncdlg">
   <form method="dialog" id="syncform">
-    <h2>Sync notes with GitHub</h2>
+    <h3>Sync notes with GitHub</h3>
     <p>Notes are stored as files in a private GitHub repository, with folders shown
       as a tree. Set this up once on each device.</p>
-    <label for="syncrepo">Repository (owner/name)</label>
-    <input id="syncrepo" placeholder="kevin101681/notes" autocomplete="off" spellcheck="false" required>
-    <label for="syncbranch">Branch</label>
-    <input id="syncbranch" placeholder="main" autocomplete="off" spellcheck="false">
-    <label for="synctoken">Access token</label>
-    <input id="synctoken" type="password" autocomplete="off" spellcheck="false" required>
+    <label>Repository (owner/name)
+      <input id="syncrepo" placeholder="kevin101681/notes" autocomplete="off" spellcheck="false" required>
+    </label>
+    <label>Branch
+      <input id="syncbranch" placeholder="main" autocomplete="off" spellcheck="false">
+    </label>
+    <label>Access token
+      <input id="synctoken" type="password" autocomplete="off" spellcheck="false" required>
+    </label>
     <p>Create a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a>
       with access to only this repository and <b>Contents: Read and write</b>.
       It is kept in this browser only.</p>
     <p id="syncerr"></p>
-    <div class="btns">
-      <button type="button" id="syncoff">Disconnect</button>
+    <div class="dialog-actions">
+      <button type="button" class="btn danger" id="syncoff">Disconnect</button>
       <span class="spacer"></span>
-      <button type="button" id="synccancel">Cancel</button>
-      <button type="submit" class="primary" id="syncok">Connect</button>
+      <button type="button" class="btn" id="synccancel">Cancel</button>
+      <button type="submit" class="btn primary" id="syncok">Connect</button>
     </div>
   </form>
 </dialog>
 
 <div id="statusbar">
-  <span id="saved"></span>
   <span id="sync"></span>
   <span id="pos">Ln 1, Col 1</span>
   <span id="counts">0 words, 0 chars</span>
 </div>
+
+<div id="toasts" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -407,7 +473,6 @@
   var replaceInput = document.getElementById("replaceinput");
   var findCount = document.getElementById("findcount");
   var statusbar = document.getElementById("statusbar");
-  var savedEl = document.getElementById("saved");
   var syncEl = document.getElementById("sync");
   var sidebar = document.getElementById("sidebar");
   var treeEl = document.getElementById("tree");
@@ -419,7 +484,6 @@
   var fileHandle = null;          // File System Access API handle, when available
   var fileName = "Untitled.txt";
   var dirty = false;
-  var savedTimer = null;
 
   // The note being edited, when the buffer belongs to the synced repo:
   // { path: "work/todo.txt", sha: "<blob sha last synced>" }. null = local buffer.
@@ -432,6 +496,32 @@
     sidebar: !narrow.matches,
     fontSize: 15
   };
+
+  /* ---------------- icons ---------------- */
+
+  // The Claude Dashboard's stroke icon set, so the two apps share one look.
+  var ICON_ATTRS = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+  var ICONS = {
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    chevronRight: '<path d="M9 6l6 6-6 6"/>',
+    chevronUp: '<path d="M6 15l6-6 6 6"/>',
+    chevronDown: '<path d="M6 9l6 6 6-6"/>',
+    plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 5v6h-6"/>',
+    pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    close: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>',
+    panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+    settings: '<path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'
+  };
+
+  function icon(name) { return "<svg " + ICON_ATTRS + ' aria-hidden="true">' + ICONS[name] + "</svg>"; }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-icon]"), function (b) {
+    b.innerHTML = icon(b.dataset.icon);
+  });
 
   /* ---------------- persistence ---------------- */
 
@@ -489,6 +579,9 @@
     setCheck("theme", prefs.dark);
     setCheck("statusbar", prefs.statusbar);
     setCheck("sidebar", prefs.sidebar);
+    // Show what a click switches to, as the dashboard's theme button does.
+    document.getElementById("themebtn").innerHTML = icon(prefs.dark ? "sun" : "moon");
+    document.querySelector('meta[name="theme-color"]').content = prefs.dark ? "#0f1519" : "#fdfcff";
     persist();
   }
 
@@ -506,10 +599,17 @@
     if (note) schedulePush();
   }
 
+  // A transient notice at the top of the window, like the dashboard's toasts.
   function flash(msg) {
-    savedEl.textContent = msg;
-    clearTimeout(savedTimer);
-    savedTimer = setTimeout(function () { savedEl.textContent = ""; }, 2500);
+    var host = document.getElementById("toasts");
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    host.appendChild(t);
+    setTimeout(function () {
+      t.classList.add("leaving");
+      setTimeout(function () { t.remove(); }, 200);
+    }, 2500);
   }
 
   /* ---------------- status bar ---------------- */
@@ -1140,27 +1240,40 @@
     return e;
   }
 
-  function treeButton(kind, glyph, title) {
-    var b = el("button", "iconbtn", glyph);
+  function treeButton(kind, iconName, title) {
+    var b = el("button", kind === "delete" ? "act del" : "act");
     b.type = "button";
     b.dataset.tree = kind;
     b.title = title;
+    b.setAttribute("aria-label", title);
+    b.innerHTML = icon(iconName);
     return b;
   }
 
-  function renderDir(node) {
+  function iconSpan(cls, name) {
+    var s = el("span", cls);
+    if (name) s.innerHTML = icon(name);
+    return s;
+  }
+
+  // Rows are indented with --depth rather than nested padding, so every row's
+  // hover and highlight spans the full width of the card.
+  function renderDir(node, depth) {
+    depth = depth || 0;
     var ul = el("ul");
     Object.keys(node.dirs).sort(byName).forEach(function (name) {
       var d = node.dirs[name], open = !!openDirs[d.path];
       var li = el("li"), row = el("div", "row");
       row.dataset.dir = d.path;
       row.tabIndex = 0;
+      row.style.setProperty("--depth", depth);
       row.setAttribute("aria-expanded", open);
-      row.appendChild(el("span", "tw", open ? "▾" : "▸"));
+      row.appendChild(iconSpan("chev", "chevronRight"));
+      row.appendChild(iconSpan("ficon", "folder"));
       row.appendChild(el("span", "name", name));
-      row.appendChild(treeButton("new", "+", "New note in " + name));
+      row.appendChild(treeButton("new", "plus", "New note in " + name));
       li.appendChild(row);
-      if (open) li.appendChild(renderDir(d));
+      if (open) li.appendChild(renderDir(d, depth + 1));
       ul.appendChild(li);
     });
     node.files.sort(function (a, b) { return byName(baseName(a.path), baseName(b.path)); })
@@ -1169,11 +1282,13 @@
         row.dataset.path = f.path;
         row.tabIndex = 0;
         row.title = f.path;
+        row.style.setProperty("--depth", depth);
         if (note && note.path === f.path) row.classList.add("active");
-        row.appendChild(el("span", "tw"));
+        row.appendChild(iconSpan("chev"));
+        row.appendChild(iconSpan("ficon", "file"));
         row.appendChild(el("span", "name", baseName(f.path)));
-        row.appendChild(treeButton("rename", "✎", "Rename or move"));
-        row.appendChild(treeButton("delete", "✕", "Delete"));
+        row.appendChild(treeButton("rename", "pencil", "Rename or move"));
+        row.appendChild(treeButton("delete", "close", "Delete"));
         li.appendChild(row);
         ul.appendChild(li);
       });
@@ -1184,7 +1299,7 @@
     treeEl.textContent = "";
     if (!sync) {
       var intro = el("div", "treemsg", "Keep notes in a private GitHub repository and open them on every device. ");
-      var setup = el("button", "", "Set up sync…");
+      var setup = el("button", "btn primary", "Set up sync…");
       setup.type = "button";
       setup.dataset.act = "syncsettings";
       intro.appendChild(setup);
@@ -1193,7 +1308,7 @@
     }
     if (treeMsg) treeEl.appendChild(el("div", "treemsg", treeMsg));
     if (!files.length) {
-      if (!treeMsg) treeEl.appendChild(el("div", "treemsg", "No notes yet. Use + to create one."));
+      if (!treeMsg) treeEl.appendChild(el("div", "treemsg", "No notes yet. Use + above to create one."));
       return;
     }
     treeEl.appendChild(renderDir(buildTree()));
