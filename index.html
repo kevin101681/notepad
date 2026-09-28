@@ -1269,9 +1269,20 @@
       setSync("Connected");
       if (note && dirty) pushNow();
     }, function (err) {
-      dlgErr.textContent = err.status === 401 ? "GitHub rejected that token."
-        : err.status === 404 ? "Not found. Check the repository and branch, and that the token can access this repository."
-        : navigator.onLine ? err.message : "You're offline.";
+      if (err.status !== 404) {
+        dlgErr.textContent = err.status === 401 ? "GitHub rejected that token (mistyped, expired or revoked)."
+          : err.status === 403 ? "The token can see " + cfg.repo + " but lacks Contents permission: " + err.message
+          : navigator.onLine ? err.message : "You're offline.";
+        return;
+      }
+      // GitHub says 404 both for a missing branch and for a private repo the token
+      // isn't allowed to see — ask about the repo itself to tell them apart.
+      gh("GET", "", null, cfg).then(function () {
+        dlgErr.textContent = 'Branch "' + cfg.branch + '" doesn\'t exist in ' + cfg.repo + ".";
+      }, function () {
+        dlgErr.textContent = "This token can't see " + cfg.repo + ". Check the name, and that the " +
+          "token's Repository access includes it (Only select repositories → " + cfg.repo + ").";
+      });
     });
   });
 
